@@ -2,19 +2,8 @@
 
 <suite name="Suite1" verbose="1" parallel="tests" thread-count="2">
     <test name="Regression_Tests">
-        <groups>
-            <run>
-                <include name="Publisher" />
-                <exclude name="MediaWorksGateway" />
-                <exclude name="BatchMaster" />
-                <exclude name="MediaWorksPlatformGateway" />
-            </run>
-        </groups>
         <classes>
-            <class name="tests.UBOTest_Publisher"/>
-            <class name="tests.UBOTest_BatchMaster"/>
-            <class name="tests.UBOTest_MediaWorksPlatformGateway"/>
-            <class name="tests.UBOTest_MediaWorksGateway"/>
+            <class name="tests.UBOTest_PolluxGW_NewVersion"/>
         </classes>
     </test>
 </suite>

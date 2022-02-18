@@ -3,11 +3,13 @@ package tests;
 import com.relevantcodes.extentreports.LogStatus;
 import core.TestReporter;
 import core.email;
+import core.excelUserData;
 import io.appium.java_client.windows.WindowsDriver;
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.interactions.SourceType;
 import org.openqa.selenium.io.FileHandler;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -27,11 +29,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class TestBase {
 
+    private WindowsDriver driverWinPolluxGW=null;
     private WindowsDriver driverWinMerge=null;
     private WindowsDriver driverWinLC=null;
     private WindowsDriver driverWinFM=null;
@@ -40,12 +45,19 @@ public class TestBase {
     public WindowsDriver driverWinGA=null;
     private WindowsDriver driverWinSA=null;
     private WindowsDriver driverWinSV=null;
+    private WindowsDriver driverUnitamSW=null;
+    private WindowsDriver driverWinReproductionAgent;
     private TestReporter reporter;
     String date = null;
+    String RAWinHandleHex = null;
+    String FMWinHandleHex = null;
+    String LCWinHandleHex = null;
+    String UnitamSWHandleHex = null;
+    List<Map<String,String>> appTitlesFromFile;
 
 
-    @BeforeSuite(groups={"Publisher"})
-    public void openWinMergeApp() {
+    //@BeforeSuite
+    public final void openWinMergeApp() {
         DesiredCapabilities WM = new DesiredCapabilities();
         WM.setCapability("app", "C:\\Program Files\\WinMerge\\WinMergeU.exe");
         WM.setCapability("platformName", "Windows_WM");
@@ -62,23 +74,37 @@ public class TestBase {
         }
     }
 
-    @BeforeSuite(groups={"Publisher"})
-    public void setUpLC() throws IOException {
-        DesiredCapabilities LC = new DesiredCapabilities();
-        LC.setCapability("app", "C:\\UNITAM SW\\LogCollector.exe");
-        LC.setCapability("platformName", "Windows_LC");
-        LC.setCapability("deviceName", "WindowsPC_LC");
-        //try {
-            driverWinLC = new WindowsDriver(new URL("http://127.0.0.1:4723/"), LC);
-            Set<String> windowsLC = driverWinLC.getWindowHandles();
-            System.out.println(windowsLC);
-        driverWinLC.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(driverWinLC,"Log Collector didn't open");
-
-        reporter = new TestReporter();
+    @BeforeSuite  //(groups={"new_PolluxGateway","old_PolluxGateway"})
+    public final void searchLC()  {
+        try{
+            appTitlesFromFile = excelUserData.getAppFoldersFromFile();
+            DesiredCapabilities desktopCapabilities = new DesiredCapabilities();
+            desktopCapabilities.setCapability("platformName", "Windows");
+            desktopCapabilities.setCapability("deviceName", "WindowsPC");
+            desktopCapabilities.setCapability("app", "Root");
+            WindowsDriver desktopSession = new WindowsDriver(new URL("http://127.0.0.1:4723/"), desktopCapabilities);
+            DesiredCapabilities LCCapabilities = new DesiredCapabilities();
+            LCCapabilities.setCapability("platformName", "Windows");
+            LCCapabilities.setCapability("deviceName", "WindowsPC");
+            WebElement lc = desktopSession.findElementByName(appTitlesFromFile.get(0).get("LogCollectorTitle"));
+            //List<WebElement> lc = desktopSession.findElementsByName("LogCollector - Ver. 5.23.2247.45 Copyright (C) Media Instruments SA 2010-2021. All Rights Reserved.");
+            //if (lc.size() == 1) {
+                //String LCWinHandleStr = lc.get(0).getAttribute("NativeWindowHandle");
+                String LCWinHandleStr = lc.getAttribute("NativeWindowHandle");
+                int LCWinHandleInt = Integer.parseInt(LCWinHandleStr);
+                String LCWinHandleHex = Integer.toHexString(LCWinHandleInt);
+                LCCapabilities.setCapability("appTopLevelWindow", LCWinHandleHex);
+                System.out.println("LC Handle is: " + LCWinHandleHex);
+            //}else{System.out.println("Something went wrong opening LC in Admin mode....");}
+            driverWinLC = new WindowsDriver(new URL("http://127.0.0.1:4723/"), LCCapabilities);
+            Thread.sleep(500);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Something went wrong opening LC in Admin mode....");
+        }
     }
 
-    public void setUpRFAS()  {
+    public final void setUpRFAS()  {
         try {
         DesiredCapabilities RFAS = new DesiredCapabilities();
         RFAS.setCapability("app","C:\\UNITAM SW\\RFAS.exe");
@@ -94,51 +120,129 @@ public class TestBase {
         driverWinRFAS.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
     }
 
-    public void setUpFM() throws MalformedURLException {
+    public final void setUpFM()  {
         DesiredCapabilities FM = new DesiredCapabilities();
         FM.setCapability("app","C:\\UNITAM SW\\FileMaster.exe");
         FM.setCapability("platformName","Windows_FM");
         FM.setCapability("deviceName","WindowsPC_FM");
-        driverWinFM = new WindowsDriver(new URL("http://127.0.0.1:4723/"),FM);
+        try {
+            driverWinFM = new WindowsDriver(new URL("http://127.0.0.1:4723/"),FM);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
         Set<String> windowsFM = driverWinFM.getWindowHandles();
         System.out.println(windowsFM);
         driverWinFM.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
         Assert.assertNotNull(driverWinFM,"File Master didn't open");
+
     }
 
-    public void setUpPublisher() {
-        DesiredCapabilities Publisher = new DesiredCapabilities();
-        Publisher.setCapability("app", "C:\\UNITAM SW\\Publisher.exe");
-        Publisher.setCapability("platformName", "Windows_Publisher");
-        Publisher.setCapability("deviceName", "WindowsPC_Publisher");
-        try {
-            driverWinPub = new WindowsDriver(new URL("http://127.0.0.1:4723/"), Publisher);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+    public final void attachDriverToFM()  {
+        try{
+            appTitlesFromFile = excelUserData.getAppFoldersFromFile();
+            DesiredCapabilities desktopCapabilities = new DesiredCapabilities();
+            desktopCapabilities.setCapability("platformName", "Windows");
+            desktopCapabilities.setCapability("deviceName", "WindowsPC");
+            desktopCapabilities.setCapability("app", "Root");
+            WindowsDriver desktopSession = new WindowsDriver(new URL("http://127.0.0.1:4723/"), desktopCapabilities);
+            DesiredCapabilities FMCapabilities = new DesiredCapabilities();
+            FMCapabilities.setCapability("platformName", "Windows");
+            FMCapabilities.setCapability("deviceName", "WindowsPC");
+            WebElement fm = desktopSession.findElementByName(appTitlesFromFile.get(0).get("FileMasterTitle"));
+            //List<WebElement> fm = desktopSession.findElementsByName("FileMaster - Ver. 5.23.2245.49 Copyright (C) Media Instruments SA 2007. All rights reserved.");
+            //if (fm.size() == 1) {
+                //String FMWinHandleStr = fm.get(0).getAttribute("NativeWindowHandle");
+                String FMWinHandleStr = fm.getAttribute("NativeWindowHandle");
+                int FMWinHandleInt = Integer.parseInt(FMWinHandleStr);
+                String FMWinHandleHex = Integer.toHexString(FMWinHandleInt);
+                FMCapabilities.setCapability("appTopLevelWindow", FMWinHandleHex);
+                System.out.println("FM Handle is: " + FMWinHandleHex);
+            //}else{System.out.println("Something went wrong opening FM in Admin mode....");}
+
+    driverWinFM = new WindowsDriver(new URL("http://127.0.0.1:4723/"), FMCapabilities);
+    } catch (Exception e) {
+        e.printStackTrace();
+        System.out.println("Something went wrong opening FM in Admin mode....");
         }
-        Assert.assertNotNull(driverWinPub,"Publisher didn't open");
-        driverWinPub.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
     }
 
-    public void setUpSignalsAdmin() {
-        DesiredCapabilities SignalsAdmin = new DesiredCapabilities();
-        SignalsAdmin.setCapability("app", "C:\\UNITAM SW\\TOOLS\\SignalsAdmin.exe");
-        SignalsAdmin.setCapability("platformName", "Windows_SignalsAdmin");
-        SignalsAdmin.setCapability("deviceName", "WindowsPC_SignalsAdmin");
-        try {
-            System.out.println("Set Up Signal Admin...");
-            driverWinSA = new WindowsDriver(new URL("http://127.0.0.1:4723/"), SignalsAdmin);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+    public final void attachDriverToOldPolluxGatewayVersion() {
+        try{
+        appTitlesFromFile = excelUserData.getAppFoldersFromFile();
+        DesiredCapabilities desktopCapabilities = new DesiredCapabilities();
+        desktopCapabilities.setCapability("platformName", "Windows");
+        desktopCapabilities.setCapability("deviceName", "WindowsPC");
+        desktopCapabilities.setCapability("app", "Root");
+        WindowsDriver desktopSession = new WindowsDriver(new URL("http://127.0.0.1:4723/"), desktopCapabilities);
+        DesiredCapabilities PGCapabilities = new DesiredCapabilities();
+        PGCapabilities.setCapability("platformName", "Windows");
+        PGCapabilities.setCapability("deviceName", "WindowsPC");
+        WebElement pg = desktopSession.findElementByName(appTitlesFromFile.get(0).get("OldPolluxGatewayTitle"));
+            String PGWinHandleStr = pg.getAttribute("NativeWindowHandle");
+            int PGWinHandleInt = Integer.parseInt(PGWinHandleStr);
+            String PGWinHandleHex = Integer.toHexString(PGWinHandleInt);
+            PGCapabilities.setCapability("appTopLevelWindow", PGWinHandleHex);
+            System.out.println("PG Handle is: " + PGWinHandleHex);
+        driverWinPolluxGW = new WindowsDriver(new URL("http://127.0.0.1:4723/"), PGCapabilities);
+    } catch (Exception e) {
+        e.printStackTrace();
+        System.out.println("Something went wrong opening PolluxGW old version in Admin mode....");
         }
-        //String currentWindowHandle = driverWinSA.getWindowHandle();
-        Set<String> windowsSA = driverWinSA.getWindowHandles();
-        System.out.println("SA handler login: "+windowsSA);
-        Assert.assertNotNull(driverWinSA,"SignalsAdmin didn't open");
-        driverWinSA.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
     }
 
-    public void setUpSystemView() {
+    public final void attachDriverToNewPolluxGatewayVersion() {
+        try{
+            appTitlesFromFile = excelUserData.getAppFoldersFromFile();
+            DesiredCapabilities desktopCapabilities = new DesiredCapabilities();
+            desktopCapabilities.setCapability("platformName", "Windows");
+            desktopCapabilities.setCapability("deviceName", "WindowsPC");
+            desktopCapabilities.setCapability("app", "Root");
+            WindowsDriver desktopSession = new WindowsDriver(new URL("http://127.0.0.1:4723/"), desktopCapabilities);
+            DesiredCapabilities PGCapabilities = new DesiredCapabilities();
+            PGCapabilities.setCapability("platformName", "Windows");
+            PGCapabilities.setCapability("deviceName", "WindowsPC");
+            WebElement pg = desktopSession.findElementByName(appTitlesFromFile.get(0).get("NewPolluxGatewayTitle"));
+            String PGWinHandleStr = pg.getAttribute("NativeWindowHandle");
+            int PGWinHandleInt = Integer.parseInt(PGWinHandleStr);
+            String PGWinHandleHex = Integer.toHexString(PGWinHandleInt);
+            PGCapabilities.setCapability("appTopLevelWindow", PGWinHandleHex);
+            System.out.println("PG Handle is: " + PGWinHandleHex);
+            driverWinPolluxGW = new WindowsDriver(new URL("http://127.0.0.1:4723/"), PGCapabilities);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Something went wrong opening PolluxGW new version in Admin mode....");
+        }
+    }
+
+    public final void attachDriverToRFAS() {
+        try{
+            appTitlesFromFile = excelUserData.getAppFoldersFromFile();
+        DesiredCapabilities desktopCapabilities = new DesiredCapabilities();
+        desktopCapabilities.setCapability("platformName", "Windows");
+        desktopCapabilities.setCapability("deviceName", "WindowsPC");
+        desktopCapabilities.setCapability("app", "Root");
+        WindowsDriver desktopSession = new WindowsDriver(new URL("http://127.0.0.1:4723/"), desktopCapabilities);
+        DesiredCapabilities RFASCapabilities = new DesiredCapabilities();
+        RFASCapabilities.setCapability("platformName", "Windows");
+        RFASCapabilities.setCapability("deviceName", "WindowsPC");
+        WebElement RFAS = desktopSession.findElementByName(appTitlesFromFile.get(0).get("RFAS_Title"));
+        //List<WebElement> RFAS = desktopSession.findElementsByName("RFAS - Ver. 5.23.2247.50 Copyright (C) Media Instruments SA 2010-2021. All Rights Reserved.");
+        //if (RFAS.size() == 1) {
+            //String RFASWinHandleStr = RFAS.get(0).getAttribute("NativeWindowHandle");
+            String RFASWinHandleStr = RFAS.getAttribute("NativeWindowHandle");
+            int RFASWinHandleInt = Integer.parseInt(RFASWinHandleStr);
+            String RFASWinHandleHex = Integer.toHexString(RFASWinHandleInt);
+            RFASCapabilities.setCapability("appTopLevelWindow", RFASWinHandleHex);
+            System.out.println("RFAS Handle is: " + RFASWinHandleHex);
+        //}else{System.out.println("Something went wrong opening RFAS in Admin mode....");}
+        driverWinRFAS = new WindowsDriver(new URL("http://127.0.0.1:4723/"), RFASCapabilities);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Something went wrong opening RFAS in Admin mode....");
+        }
+    }
+
+    public final void setUpSystemView() {
         DesiredCapabilities SystemView = new DesiredCapabilities();
         SystemView.setCapability("app", "C:\\UNITAM SW\\TOOLS\\SystemView.exe");
         SystemView.setCapability("platformName", "Windows_SystemView");
@@ -154,79 +258,74 @@ public class TestBase {
         driverWinSV.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
     }
 
-    public void setUpGroupAdmin() {
-        DesiredCapabilities GroupAdmin = new DesiredCapabilities();
-        GroupAdmin.setCapability("app", "C:\\UNITAM SW\\GroupAdmin.exe");
-        GroupAdmin.setCapability("platformName", "Windows_GroupAdmin");
-        GroupAdmin.setCapability("deviceName", "WindowsPC_GroupAdmin");
+    public final void setUpReproductionAgent()  {
+        DesiredCapabilities RA = new DesiredCapabilities();
+        RA.setCapability("ms:waitForAppLaunch",15);
+        RA.setCapability("app", "C:\\UNITAM SW\\ReproductionAgent.exe");
+        RA.setCapability("platformName", "Windows_ReproductionAgent");
+        RA.setCapability("deviceName", "WindowsPC_ReproductionAgent");
         try {
-            driverWinGA = new WindowsDriver(new URL("http://127.0.0.1:4723/"), GroupAdmin);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+        driverWinReproductionAgent = new WindowsDriver(new URL("http://127.0.0.1:4723/"), RA);
+        } catch (Exception e) {
         }
-        Set<String> windowsGA = driverWinGA.getWindowHandles();
-        Assert.assertNotNull(driverWinGA,"GroupAdmin didn't open");
-        System.out.println("GA handler: "+windowsGA);
-        //driverWinGA.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+        //pressButtonF1();
+        Set<String> windowsRA = getDriverRA().getWindowHandles();
+        System.out.println("ReproductionAgent handler: "+windowsRA);
+        Assert.assertNotNull(getDriverRA(),"ReproductionAgent didn't open");
+
     }
 
+    public WindowsDriver getDriverPolluxGW() { return driverWinPolluxGW;}
     public WindowsDriver getDriverLC() { return driverWinLC;}
     public WindowsDriver getDriverFM() { return driverWinFM;}
     public WindowsDriver getDriverRFAS() { return driverWinRFAS;}
-    public WindowsDriver getDriverPub() { return driverWinPub;}
-    public WindowsDriver getDriverGA() { return driverWinGA;}
-    public WindowsDriver getDriverSignalsAdmin() { return driverWinSA;}
     public WindowsDriver getDriverWinMerge() { return driverWinMerge;}
     public WindowsDriver getDriverSV() { return driverWinSV;}
+    public WindowsDriver getDriverRA() { return driverWinReproductionAgent;}
+    public WindowsDriver getDriverUnitamSW(){ return driverUnitamSW;}
 
         public void tearDownSA() {
         driverWinSA.close();
         driverWinSA.findElementByName("Yes").click();
     }
 
-        //@AfterSuite
-        public void tearDownFM(){
+
+        public void tearDownFM() throws Exception {
         driverWinFM.close();
             for (int i = 0; i < 2; i++) { driverWinFM.findElementByName("Yes").click(); }
+            Thread.sleep(5000);
         }
 
-    @AfterMethod(groups={"Publisher"})
+    @AfterMethod(groups={"new_PolluxGateway","old_PolluxGateway"})
     public void testDone(){System.out.println("##########Test is over, proceed with next one...");}
 
-    @BeforeMethod(groups={"Publisher"})
+    @BeforeMethod(groups={"new_PolluxGateway","old_PolluxGateway"})
     public void startTest(){System.out.println("#########Test is starting...");}
 
-    public void tearDownSV() { driverWinSV.close(); }
-
-    public void tearDownPub() throws InterruptedException {
-        driverWinPub.close();
-        driverWinPub.findElementByAccessibilityId("6").click();
-        Thread.sleep(1000);
-        driverWinPub.findElementByAccessibilityId("6").click();
-    }
+    public void tearDownSV() { driverWinSV.findElementByAccessibilityId("Close").click(); }
 
     public void tearDownWinMerge() { driverWinMerge.close(); }
 
-    public void tearDownGA() throws InterruptedException {
-        Thread.sleep(1000);
-        driverWinGA.close();
-        driverWinGA.findElementByName("Yes").click();
-    }
 
-        //@AfterSuite
-         public void tearDownRFAS() {
+    //@AfterSuite
+    public void tearDownRFAS() {
             driverWinRFAS.close();
             for (int i = 0; i < 2; i++) { driverWinRFAS.findElementByName("Yes").click(); }
-        }
+    }
 
-        //@AfterSuite   //  LC close after all apps closed
-        public void tearDownLC(){
-        System.out.println("---> closing LC ");
-        driverWinLC.close();
-            for (int i = 0; i < 3; i++) { driverWinLC.findElementByName("Yes").click(); }
-        }
+    public void tearDownReproAgent() throws InterruptedException {
+        Thread.sleep(1000);
+        driverWinReproductionAgent.close();
+        driverWinReproductionAgent.findElementByName("Yes").click();
+    }
 
-        public void tearDownLC_WD(){
+    public void tearDownPolluxGW() {
+        driverWinPolluxGW.close();
+        for (int i = 0; i < 2; i++) { driverWinPolluxGW.findElementByName("Yes").click(); }
+        driverWinPolluxGW.quit();
+    }
+
+    public void tearDownLC_WD(){
         System.out.println("---> closing LC & WatchDog");
         //getElementCoordinates(driverWinLC.findElementByName("File"));
         driverWinLC.findElementByName("File").click();
@@ -236,14 +335,30 @@ public class TestBase {
         System.out.println();
     }
 
-        public WebElement waitTillButtonIsDisplayed(WindowsDriver wd, WebElement ele) {
+    public WebElement waitTillButtonIsDisplayed(WindowsDriver wd, WebElement ele) {
             WebDriverWait wait = new WebDriverWait(wd, 40);
             return wait.until(ExpectedConditions.elementToBeClickable(ele));
           }
 
-    public void rightMouseClick(WindowsDriver ele,WindowsDriver driver){
+    public void rightMouseClick(WebElement ele,WindowsDriver driver){
         Actions actions = new Actions(driver);
-        actions.contextClick((WebElement) ele).perform();
+        actions.contextClick(ele).perform();
+    }
+
+    public void switchToWindowRA() {
+        Set<String> windows = driverWinReproductionAgent.getWindowHandles();
+        for(String w : windows) {
+            driverWinReproductionAgent.switchTo().window(w);
+            //System.out.println("---> ReproductionAgent: "+w);
+        }
+    }
+
+    public void switchToWindowPolluxGW() {
+        Set<String> windows = driverWinPolluxGW.getWindowHandles();
+        for(String w : windows) {
+            driverWinPolluxGW.switchTo().window(w);
+            //System.out.println("---> PolluxGW: "+w);
+        }
     }
 
     public void switchToWindowGA(WindowsDriver driverWinGA) {
@@ -308,10 +423,12 @@ public class TestBase {
             driverWinLC.switchTo().window(w);
             System.out.println("---> LC window: "+w);
         }
+        //driverWinLC.switchTo().window(LCWinHandleHex);
+        //System.out.println("---> LogCollector ID is: "+LCWinHandleHex);
     }
 
-    @BeforeMethod(groups={"Publisher"})
-    public void initTestReport(Method method){ reporter.startReporting(method.getName()); }
+    //@BeforeMethod
+    public void initTestReport(Method method){reporter.startReporting(method.getName()); }
 
     public TestReporter reporter(){
         if(reporter!=null){
@@ -320,16 +437,15 @@ public class TestBase {
         return null;
     }
 
-    @AfterMethod(groups={"Publisher"})
+    //@AfterMethod
     public void closeReport(){ reporter.endReporting(); }
 
-    @AfterSuite(groups={"Publisher"})
+    //@AfterSuite
     public void clearReport(){
         reporter.flushReport();
     }
 
-
-    @AfterMethod(groups={"Publisher"})
+    //@AfterMethod
     public void testStatusInExtentReport(ITestResult result) {
         if(ITestResult.FAILURE == result.getStatus()){
             reporter().report(LogStatus.FAIL,"Failed test is: "+result.getName());
@@ -341,160 +457,143 @@ public class TestBase {
         }
     }
 
-    @AfterMethod(groups={"Publisher"})
-    public void takeScreenShotIfFailurePublisherTests(ITestResult result) throws Exception {
+    @AfterMethod  //(groups={"new_PolluxGateway","old_PolluxGateway"})
+    public void takeScreenShotIfTestsFails(ITestResult result) throws Exception {
         if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("checkIfClientIsAuthorized_OLD")) {
             TakesScreenshot camera = ((TakesScreenshot) driverWinRFAS);
             File screenShot = camera.getScreenshotAs(OutputType.FILE);
             File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
             FileHandler.copy(screenShot, DestFile);
-            email.sendEmailForPublisherFailure("checkIfClientIsAuthorized_OLD");
-        } else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("checkIfPublishHouseHoldsProcessIsCorrect_OLD")) {
+            email.sendEmailForPolluxFailure("checkIfClientIsAuthorized_OLD");
+        } else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("verifyRenameFileMasterAndUnzipFiles_OLD")) {
+            email.sendEmailForPolluxFailure("verifyRenameFileMasterAndUnzipFiles_OLD");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("startFM_AdminMode_OLD")) {
             TakesScreenshot camera = ((TakesScreenshot) driverWinGA);
             File screenShot = camera.getScreenshotAs(OutputType.FILE);
             File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
             FileHandler.copy(screenShot, DestFile);
-            email.sendEmailForPublisherFailure("checkIfPublishHouseHoldsProcessIsCorrect_OLD");
-        } else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("performPriorityListAction_OLD")) {
+            email.sendEmailForPolluxFailure("startFM_AdminMode_OLD");
+        } else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("waitClientAuthorized_OLD")) {
             TakesScreenshot camera = ((TakesScreenshot) driverWinSA);
             File screenShot = camera.getScreenshotAs(OutputType.FILE);
             File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
             FileHandler.copy(screenShot, DestFile);
-            email.sendEmailForPublisherFailure("performPriorityListAction_OLD");
-        } else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("readLogsFromSystemView_OLD")) {
-            TakesScreenshot camera = ((TakesScreenshot) driverWinSV);
-            File screenShot = camera.getScreenshotAs(OutputType.FILE);
-            File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            FileHandler.copy(screenShot, DestFile);
-            email.sendEmailForPublisherFailure("readLogsFromSystemView_OLD");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("checkIfPublisherOpensCorrectly_OLD")) {
+            email.sendEmailForPolluxFailure("waitClientAuthorized_OLD");
+        } else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("renamePolluxFromPanelTPIFolder_OLD")) {
+            email.sendEmailForPolluxFailure("renamePolluxFromPanelTPIFolder_OLD");
+        } else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("openPolluxgw_AdminMode_OLD")) {
             TakesScreenshot camera =((TakesScreenshot)driverWinPub);
             File screenShot = camera.getScreenshotAs(OutputType.FILE);
             File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
             FileHandler.copy(screenShot,DestFile);
-            email.sendEmailForPublisherFailure("checkIfPublisherOpensCorrectly_OLD");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("verifyCompareFiles")) {
+            email.sendEmailForPolluxFailure("openPolluxgw_AdminMode_OLD");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("VerifyReproductionAgentTitle_OLD")) {
             TakesScreenshot camera = ((TakesScreenshot) driverWinPub);
             File screenShot = camera.getScreenshotAs(OutputType.FILE);
             File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
             FileHandler.copy(screenShot, DestFile);
-            email.sendEmailForPublisherFailure("verifyCompareFiles");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("removeLinePublisherINI_AndCheckTPIVersion")) {
-            TakesScreenshot camera = ((TakesScreenshot) driverWinRFAS);
-            File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            File screenShot = camera.getScreenshotAs(OutputType.FILE);
-            //File DestFile = new File(System.getProperty("user.dir")+"\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //File DestFile = new File("./src/main/screenShots/FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            FileHandler.copy(screenShot, DestFile);
-            email.sendEmailForPublisherFailure("removeLinePublisherINI_AndCheckTPIVersion");
-        }
-        else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("verifyDownloadNewApp")) {
+            email.sendEmailForPolluxFailure("VerifyReproductionAgentTitle_OLD");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("NumberOfTPIToSendToFM_OLD")) {
+            email.sendEmailForPolluxFailure("NumberOfTPIToSendToFM_OLD");
+        } else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("SendingJobsToFileMasterFromReproductionAgent_OLD")) {
             TakesScreenshot camera = ((TakesScreenshot) driverWinLC);
             File screenShot = camera.getScreenshotAs(OutputType.FILE);
             File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //File DestFile = new File(System.getProperty("user.dir")+"\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //File DestFile = new File("./src/main/screenShots/FAIL__" + result.getName() + "__" + formatDate() + ".png");
             FileHandler.copy(screenShot, DestFile);
-            email.sendEmailForPublisherFailure("verifyDownloadNewApp");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("closeAllApps")) {
-            TakesScreenshot camera = ((TakesScreenshot) driverWinRFAS);
-            File screenShot = camera.getScreenshotAs(OutputType.FILE);
-            File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //File DestFile = new File(System.getProperty("user.dir")+"\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //File DestFile = new File("./src/main/screenShots/FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            FileHandler.copy(screenShot, DestFile);
-            email.sendEmailForPublisherFailure("closeAllApps");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("verifyCompareFiles")) {
-            TakesScreenshot camera = ((TakesScreenshot) driverWinRFAS);
+            System.out.println("##### THE REPRODUCTION AGENT PROCESS DIDN'T DISPLAY THE COMPLETE JOBS MESSAGE #####");
+            email.sendEmailForPolluxFailure("SendingJobsToFileMasterFromReproductionAgent_OLD");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("readLogsFromSystemView_OLD")) {
+            TakesScreenshot camera = ((TakesScreenshot) driverWinSV);
             File screenShot = camera.getScreenshotAs(OutputType.FILE);
             File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
             FileHandler.copy(screenShot, DestFile);
-            email.sendEmailForPublisherFailure("verifyCompareFiles");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("movePublisherOldExeFile")) {
-            email.sendEmailForPublisherFailure("movePublisherOldExeFile");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("deleteFilesOfPreviousTest")) {
-           email.sendEmailForPublisherFailure("deleteFilesOfPreviousTest");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("emptyFilesInToPanelSetting")) {
-           email.sendEmailForPublisherFailure("emptyFilesInToPanelSetting");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("getTPIVersionBeforeRegressionStarts")) {
-           email.sendEmailForPublisherFailure("getTPIVersionBeforeRegressionStarts");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("verifyRenameFileMasterAndUnzipFiles_OLD")) {
-           email.sendEmailForPublisherFailure("verifyRenameFileMasterAndUnzipFiles_OLD");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("eraseOldFileMasterFolder_OLD")) {
-            email.sendEmailForPublisherFailure("eraseOldFileMasterFolder_OLD");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("verifyChangingTagInTestRunnerXML_ForNewVersion")) {
-            email.sendEmailForPublisherFailure("verifyChangingTagInTestRunnerXML_ForNewVersion");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("verifyChangingTagInTestRunnerXML_ForOldVersion")) {
-            email.sendEmailForPublisherFailure("verifyChangingTagInTestRunnerXML_ForOldVersion");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("copyGeneratedFilesToOldTestVersionFolder")) {
-            email.sendEmailForPublisherFailure("copyGeneratedFilesToOldTestVersionFolder");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("verifyRenameFileMasterAndUnzipFiles_NEW")) {
-            email.sendEmailForPublisherFailure("verifyRenameFileMasterAndUnzipFiles_NEW");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("eraseOldFileMasterFolder_NEW")) {
-            //TakesScreenshot camera = ((TakesScreenshot) driverWinRFAS);
-            //File screenShot = camera.getScreenshotAs(OutputType.FILE);
-            //File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //FileHandler.copy(screenShot, DestFile);
-            email.sendEmailForPublisherFailure("eraseOldFileMasterFolder_NEW");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("checkIfClientIsAuthorized_NEW")) {
+            email.sendEmailForPolluxFailure("readLogsFromSystemView_OLD");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("copyTPIFilesToOldTestVersionFolder")) {
+            email.sendEmailForPolluxFailure("copyTPIFilesToOldTestVersionFolder");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("closeAllApp")) {
             TakesScreenshot camera = ((TakesScreenshot) driverWinRFAS);
             File screenShot = camera.getScreenshotAs(OutputType.FILE);
             File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
             FileHandler.copy(screenShot, DestFile);
-            email.sendEmailForPublisherFailure("checkIfClientIsAuthorized_NEW");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("checkIfPublisherOpensCorrectly_NEW")) {
-            TakesScreenshot camera =((TakesScreenshot)driverWinPub);
-            File screenShot = camera.getScreenshotAs(OutputType.FILE);
-            File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //File DestFile = new File(System.getProperty("user.dir")+"\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //File DestFile = new File("./src/main/screenShots/FAIL__"+result.getName()+"__"+formatDate()+".png");
-            FileHandler.copy(screenShot,DestFile);
-            email.sendEmailForPublisherFailure("checkIfPublisherOpensCorrectly_NEW");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("performPriorityListAction_NEW")) {
-            TakesScreenshot camera = ((TakesScreenshot) driverWinSA);
-            File screenShot = camera.getScreenshotAs(OutputType.FILE);
-            File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //File DestFile = new File(System.getProperty("user.dir")+"\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //File DestFile = new File("./src/main/screenShots/FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            FileHandler.copy(screenShot, DestFile);
-            email.sendEmailForPublisherFailure("performPriorityListAction_NEW");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("checkIfPublishHouseHoldsProcessIsCorrect_NEW")) {
+            email.sendEmailForPolluxFailure("closeAllApp");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("eraseOldFolders_OLD")) {
+            email.sendEmailForPolluxFailure("eraseOldFolders_OLD");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("verifyDownloadNewPolluxApp")) {
             TakesScreenshot camera = ((TakesScreenshot) driverWinGA);
             File screenShot = camera.getScreenshotAs(OutputType.FILE);
             File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //File DestFile = new File(System.getProperty("user.dir")+"\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //File DestFile = new File("./src/main/screenShots/FAIL__" + result.getName() + "__" + formatDate() + ".png");
             FileHandler.copy(screenShot, DestFile);
-            email.sendEmailForPublisherFailure("checkIfPublishHouseHoldsProcessIsCorrect_NEW");
+            email.sendEmailForPolluxFailure("verifyDownloadNewPolluxApp");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("verifyRenameFileMasterAndUnzipFiles_NEW")) {
+            email.sendEmailForPublisherFailure("verifyRenameFileMasterAndUnzipFiles_NEW");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("startFM_AdminMode_NEW")) {
+            TakesScreenshot camera = ((TakesScreenshot) driverWinSA);
+            File screenShot = camera.getScreenshotAs(OutputType.FILE);
+            File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
+            FileHandler.copy(screenShot, DestFile);
+            email.sendEmailForPolluxFailure("startFM_AdminMode_NEW");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("waitClientAuthorized_NEW")) {
+            TakesScreenshot camera = ((TakesScreenshot) driverWinRFAS);
+            File screenShot = camera.getScreenshotAs(OutputType.FILE);
+            File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
+            FileHandler.copy(screenShot, DestFile);
+            email.sendEmailForPolluxFailure("waitClientAuthorized_NEW");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("renamePolluxFromPanelTPIFolder_NEW")) {
+            email.sendEmailForPolluxFailure("renamePolluxFromPanelTPIFolder_NEW");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("openPolluxgw_AdminMode_NEW")) {
+            TakesScreenshot camera =((TakesScreenshot)driverWinPub);
+            File screenShot = camera.getScreenshotAs(OutputType.FILE);
+            File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
+            FileHandler.copy(screenShot,DestFile);
+            email.sendEmailForPolluxFailure("openPolluxgw_AdminMode_NEW");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("VerifyReproductionAgentTitle_NEW")) {
+            TakesScreenshot camera = ((TakesScreenshot) driverWinRFAS);
+            File screenShot = camera.getScreenshotAs(OutputType.FILE);
+            File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
+            FileHandler.copy(screenShot, DestFile);
+            email.sendEmailForPolluxFailure("VerifyReproductionAgentTitle_NEW");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("NumberOfTPIToSendToFM_NEW")) {
+            email.sendEmailForPolluxFailure("NumberOfTPIToSendToFM_NEW");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("SendingJobsToFileMasterFromReproductionAgent_NEW")) {
+            TakesScreenshot camera = ((TakesScreenshot) driverWinGA);
+            File screenShot = camera.getScreenshotAs(OutputType.FILE);
+            File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
+            FileHandler.copy(screenShot, DestFile);
+            email.sendEmailForPublisherFailure("SendingJobsToFileMasterFromReproductionAgent_NEW");
         }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("readLogsFromSystemView_NEW")) {
             TakesScreenshot camera = ((TakesScreenshot) driverWinSV);
             File screenShot = camera.getScreenshotAs(OutputType.FILE);
             File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //File DestFile = new File(System.getProperty("user.dir")+"\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
-            //File DestFile = new File("./src/main/screenShots/FAIL__" + result.getName() + "__" + formatDate() + ".png");
             FileHandler.copy(screenShot, DestFile);
             email.sendEmailForPublisherFailure("readLogsFromSystemView_NEW");
-        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("copyGeneratedFilesToNewTestVersionFolder")) {
-            email.sendEmailForPublisherFailure("copyGeneratedFilesToNewTestVersionFolder");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("copyTPIFilesToNewTestVersionFolder")) {
+           email.sendEmailForPublisherFailure("copyTPIFilesToNewTestVersionFoldert");
+        }else if (ITestResult.FAILURE == result.getStatus() && result.getName().equals("verifyCompareFilesAndSendReport")) {
+            TakesScreenshot camera = ((TakesScreenshot) driverWinSV);
+            File screenShot = camera.getScreenshotAs(OutputType.FILE);
+            File DestFile = new File("C:\\TEST\\screenShots\\FAIL__" + result.getName() + "__" + formatDate() + ".png");
+            FileHandler.copy(screenShot, DestFile);
+            email.sendEmailForPublisherFailure("verifyCompareFilesAndSendReport");
         }
     }
 
+
     public String formatDate(){
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-        LocalDateTime now = LocalDateTime.now();
-        date = dtf.format(now);
-        date = date.replaceAll("/","").replaceAll(":","").replaceAll(" ","");
-        return date;
+    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+    LocalDateTime now = LocalDateTime.now();
+    date = dtf.format(now);
+    date = date.replaceAll("/","").replaceAll(":","").replaceAll(" ","");
+    return date;
     }
 
-       public void takeAppSnap(WindowsDriver driver, String app) throws IOException {
+    public void takeAppSnap(WindowsDriver driver, String app) throws IOException {
            TakesScreenshot ts = (TakesScreenshot) driver;
            File file = ts.getScreenshotAs(OutputType.FILE);
            FileUtils.copyFile(file,new File("C:\\TEST\\screenShots\\"+app+"__"+formatDate()+".png"));
            //FileUtils.copyFile(file,new File(System.getProperty("user.dir")+"\\screenShots\\"+app+"__"+formatDate()+".png"));
            //FileUtils.copyFile(file,new File("./src/main/screenShots/"+app+"__"+formatDate()+".png"));
            if(!file.exists()){ file.mkdir(); }
-       }
+    }
 
     public void takeFileDiffSnap(WindowsDriver driver, String fileName) throws IOException {
         TakesScreenshot ts = (TakesScreenshot) driver;
@@ -538,5 +637,10 @@ public class TestBase {
         rb.keyRelease(KeyEvent.VK_V);
     }
 
+    private void pressButtonF1() throws AWTException {
+        Robot robot = new Robot();
+        robot.keyPress(KeyEvent.VK_F1);
+        robot.keyRelease(KeyEvent.VK_F1);
+    }
 
 }

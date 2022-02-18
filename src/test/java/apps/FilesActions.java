@@ -9,7 +9,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.SQLOutput;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -18,9 +17,9 @@ public class FilesActions extends TestBase {
 
     public static List<Map<String, String>> app_folders;
     WindowsDriver driverWinMerge = null;
-    //public FilesActions(WindowsDriver driverWinMerge){ this.driverWinMerge = driverWinMerge; }
+    public static List<Map<String,String>> app_new_vers;
     public static List<Map<String,String>> allCommonFoldersFromFile;
-
+    public static List<Map<String, String>> foldersPollux;
 
     public void moveFile() throws Exception {
         System.out.println("inside method MOVE-FILES Files.move");
@@ -96,60 +95,6 @@ public class FilesActions extends TestBase {
 
         }
         return newFiles + oldFiles;
-    }
-
-    public String getTpiVersionFromPublisherINI() throws Exception {
-        File inputFile = new File("C:\\Windows\\Publisher.ini");
-        BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-        String currentLine;
-        String version = null;
-        int count = 0;
-        while ((currentLine = reader.readLine()) != null) {
-            count++;
-            if (currentLine != null && currentLine.contains("nToPanelFileVer")) {   //READ VERSION
-                String[] words = currentLine.split("=");  //read the string and split it at = symbol
-                System.out.println("Version TPI BEFORE NEW VERSION --> " + words[1]);
-                System.out.println("Criteria met at Line number " + count);
-                version = words[1];
-                break;
-            }
-        }
-        return version;
-    }
-
-    public int eraseLineInFilePublisherINI() throws Exception {
-
-        File inputFile = new File("C:\\Windows\\Publisher.ini");
-        File copy = new File("C:\\Windows\\Publisher_copy.txt");
-        copy.createNewFile();
-        System.out.println(copy.getPath() + " created successfully...");
-        Thread.sleep(1000);
-        BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-        BufferedWriter writer = new BufferedWriter(new FileWriter(copy));
-        String currentLine;
-        while ((currentLine = reader.readLine()) != null) {
-            if (null != currentLine && !currentLine.contains("nToPanelFileVer")) {   //nToPanelFileVer
-                writer.write(currentLine + System.getProperty("line.separator"));
-            }
-        }
-        System.out.println("Erased row!!");
-        writer.close();
-        reader.close();
-
-        return 1;
-    }
-
-    public int cancelPublisherOldExeFileFromUnitamSWFolder() throws IOException {
-        Path temp = Files.move
-                (Paths.get("C:\\UNITAM SW\\Publisher_OLD_VERS.exe"),
-                        Paths.get("C:\\TEST\\old_EXE\\Publisher_OLD_VERS.exe"));
-        if (temp != null) {
-            System.out.println("File Publisher_OLD_VERS.exe renamed and moved successfully");
-        } else {
-            System.out.println("Failed to move the file");
-        }
-        int e = Objects.requireNonNull(new File("C:\\TEST\\old_EXE").list()).length;
-        return e;
     }
 
     public int unzipCommonDataFiles() throws IOException {
@@ -232,8 +177,6 @@ public class FilesActions extends TestBase {
         Thread.sleep(5000);
         File sourceFile = new File("C:\\UNITAM\\FileMaster");
         File destFile = new File("C:\\UNITAM\\FileMaster_OLD");
-        //if(destFile.exists()){FileUtils.cleanDirectory(new File("C:\\UNITAM\\FileMaster_OLD"));}
-
         if (sourceFile.renameTo(destFile)) {
             System.out.println("Directory FileMaster renamed successfully in FileMaster_OLD");
         } else {
@@ -258,7 +201,6 @@ public class FilesActions extends TestBase {
     }
 
     public int removeDirectory(File dir) {
-        //System.out.print("delFM_old.");
         if (!dir.exists()) { dir.mkdir();}
         if(dir.isDirectory()) {
             File[] files = dir.listFiles();
@@ -272,7 +214,7 @@ public class FilesActions extends TestBase {
         return 1;
     }
 
-     public void createFoldersToUnzipCommonData() throws IOException {
+    public void createFoldersToUnzipCommonData() throws IOException {
         //To create single directory/folder
         allCommonFoldersFromFile = excelUserData.getFoldersNamesFromExcelSheet();
         for (int i = 1; i <= allCommonFoldersFromFile.get(0).size()-11; i++) { //size is 31, 20 are the total folders where unzipped files will be placed
@@ -280,12 +222,83 @@ public class FilesActions extends TestBase {
             if (!file.exists()) {
                 if (file.mkdir()) {System.out.println("Directory "+allCommonFoldersFromFile.get(0).get("CommonFolder"+i)+" is created!");
                 } else {System.out.println("Failed to create directory "+allCommonFoldersFromFile.get(0).get("CommonFolder"+i)+"!");}
-            }
-
+            }else{
+                System.out.println("Directory "+allCommonFoldersFromFile.get(0).get("CommonFolder"+i)+" was already created when File Master started");}
         }
-
-
     }
 
+    public void renamePolluxGateWayFilesFolders() throws Exception {
+        Thread.sleep(3000);
+        File ChannelCode = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\ChannelCode");
+        File _origChannelCode = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\_origChannelCode");
+        if(!ChannelCode.exists()){ChannelCode.mkdir();}
+        if (ChannelCode.renameTo(_origChannelCode)) {
+            System.out.println("Directory ChannelCode renamed successfully in _origChannelCode");
+        } else {System.out.println("########## FAILED to rename directory in _origChannelCode because folder is already present #########");}
+        File year = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\2021");
+        File _origYear = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\_orig2021");
+        if(!year.exists()){year.mkdir();}
+        if (year.renameTo(_origYear)) {
+            System.out.println("Directory 2021 renamed successfully in _orig2021");
+        } else {System.out.println("########## FAILED to rename directory in _orig2021 because folder is already present #########");}
+        File NTACode = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\NTACode");
+        File _origNTACode = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\_origNTACode");
+        if(!NTACode.exists()){NTACode.mkdir();}
+        if (NTACode.renameTo(_origNTACode)) {
+            System.out.println("Directory NTACode renamed successfully in _origNTACode");
+        } else {System.out.println("########## FAILED to rename directory in _origNTACode because folder is already present #########");}
+        File SkyExceptions = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\SkyExceptions");
+        File _origSkyExceptions = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\_origSkyExceptions");
+        if(!SkyExceptions.exists()){SkyExceptions.mkdir();}
+        if (SkyExceptions.renameTo(_origSkyExceptions)) {
+            System.out.println("Directory SkyExceptions renamed successfully in _origSkyExceptions");
+        } else {System.out.println("########## FAILED to rename directory in _origSkyExceptions because folder is already present #########");}
+        File FromPanelData = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\FromPanelData");
+        File _origFromPanelData = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\_origFromPanelData");
+        if(!FromPanelData.exists()){FromPanelData.mkdir();}
+        if (FromPanelData.renameTo(_origFromPanelData)) {
+            System.out.println("Directory FromPanelData renamed successfully in _origFromPanelData");
+        } else {System.out.println("########## FAILED to rename directory in _origFromPanelData because folder is already present #########");}
+    }
 
+    public void renamePolluxFromPanelTPIFolder() throws Exception {
+        Thread.sleep(3000);
+        File sourceFile = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\FromPanelData\\PolluxFromPanelTPI");
+        File destFile = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\FromPanelData\\PolluxFromPanelTPI_OLD");
+        if(destFile.exists()){
+            FileUtils.cleanDirectory(new File(String.valueOf(destFile)));
+        }
+        if (sourceFile.renameTo(destFile)) {
+            System.out.println("Directory PolluxFromPanelTPI renamed successfully in PolluxFromPanelTPI_OLD");
+        } else {
+            System.out.println("########## FAILED to rename directory in PolluxFromPanelTPI_OLD because folder is already present #########");
+        }
+        Thread.sleep(2000);
+    }
+
+    public int removeFilesFromTestDirectoryOld() throws Exception {
+        //FILE TO COMPARE wth old app ---> C:\TEST\REGRESSION POLLUXGW\oldAppVersion
+        foldersPollux = excelUserData.getPolluxGWDataFromFile();
+        removeDirectory(new File(foldersPollux.get(0).get("OldFolderApp")));
+        return 1;
+    }
+
+    public int cancelPolluxOldExeFileFromUnitamSWFolder() throws IOException {
+        app_new_vers = excelUserData.getPolluxGWDataFromFile();
+        Path temp = null;
+        try {
+            temp = Files.move
+                    (Paths.get(app_new_vers.get(0).get("RenamePolluxVersion")),
+                            Paths.get(app_new_vers.get(0).get("oldExe")+"\\PolluxGateway_OLD_VERS.exe"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (temp != null) {
+            System.out.println("File Publisher_OLD_VERS.exe renamed and moved successfully to C:\\TEST\\old_Exe");
+        } else {
+            System.out.println("Failed to move the file Publisher_OLD_VERS.exe");
+        }
+        int e = Objects.requireNonNull(new File(app_new_vers.get(0).get("oldExe")).list()).length;
+        return e;
+    }
 }

@@ -99,8 +99,8 @@ public class WinMerge extends TestBase {
     }
 
 
-    public int generateReportToSend(String version, String versionTPI) throws Exception {
-        folders_names = excelUserData.getFoldersNamesFromExcelSheet();
+    public int generateReportToSendWithTPIComparation(String version) throws Exception {
+        folders_names = excelUserData.getPolluxGWDataFromFile();
         switchToWindowWinMerge(driverWinMerge);
         List diffs = driverWinMerge.findElementsByAccessibilityId("ListViewSubItem-4");
         WebElement menuBar = driverWinMerge.findElementByAccessibilityId("MenuBar");
@@ -110,21 +110,21 @@ public class WinMerge extends TestBase {
         a.doubleClick(title);
         a.moveToElement(menuBar,-450,25).click().build().perform();
         driverWinMerge.findElementByAccessibilityId("57601").click();  //click on open icon
-        copyPathFiles(folders_names.get(0).get("NewFolderApp"));
+        copyPathFiles(folders_names.get(0).get("NewFolderPolluxApp"));
         driverWinMerge.findElementByAccessibilityId("1005").click();
-        copyPathFiles(folders_names.get(0).get("OldFolderApp"));
+        copyPathFiles(folders_names.get(0).get("OldFolderPolluxApp"));
         driverWinMerge.findElementByAccessibilityId("1006").click();
         driverWinMerge.findElementByAccessibilityId("1").click(); //click compare button
-        getElementCoordinates(diffButton);
+        //getElementCoordinates(diffButton);
         a.moveToElement(diffButton,-50,-25).click().build().perform();  //click on Tools
         driverWinMerge.findElementByAccessibilityId("32868").click();   //click generate report
-        driverWinMerge.findElementByAccessibilityId("1001").clear();
-        String filePathForReport = folders_names.get(0).get("Report")+"\\Publisher_Report";
+        //driverWinMerge.findElementByAccessibilityId("1001").clear();
+        String filePathForReport = folders_names.get(0).get("Report")+"\\Regression_Report";
         copyPathFiles(filePathForReport);
         //copyPathFiles(folders_names.get(0).get("Report"));
         driverWinMerge.findElementByAccessibilityId("1").click();
-        System.out.println("....Generating REPORT with TPI version "+versionTPI+" ....");
-        email.sendReportAfterCompare(version, versionTPI);
+        //System.out.println("....Generating REPORT with TPI version "+versionTPI+" ....");
+        email.sendReportAfterCompare(version);
         Thread.sleep(5000);
         driverWinMerge.findElementByAccessibilityId("1").click();
         a.moveToElement(diffButton,1500,-40).click().build().perform();  //click in restore window button

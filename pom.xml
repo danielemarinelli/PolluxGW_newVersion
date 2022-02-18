@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.UBO.framework</groupId>
-    <artifactId>UBO_framework</artifactId>
+    <artifactId>UBO_PolluxGW</artifactId>
     <version>1.0-SNAPSHOT</version>
 <dependencies>
     <dependency>

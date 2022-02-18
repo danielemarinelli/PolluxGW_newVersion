@@ -14,14 +14,14 @@ public class Delete extends TestBase {
     public static List<Map<String,String>> app_folders;
 
     public int deleteFiles() throws Exception {
-        System.out.println("@@@ DELETING FOLDERS BEFORE STARTING THE TESTS @@@");
-        app_folders = excelUserData.getFoldersNamesFromExcelSheet();
-        File oldDir = new File(app_folders.get(0).get("OldFolderApp"));
+        System.out.println("@@@ DELETING FOLDERS BEFORE STARTING THE NEW REGRESSION @@@");
+        app_folders = excelUserData.getPolluxGWDataFromFile();
+        File oldDir = new File(app_folders.get(0).get("OldFolderPolluxApp"));
         if (!oldDir.exists()){oldDir.mkdirs();}
-        File newDir = new File(app_folders.get(0).get("NewFolderApp"));
+        File newDir = new File(app_folders.get(0).get("NewFolderPolluxApp"));
         if (!newDir.exists()){newDir.mkdirs();}
-        FileUtils.cleanDirectory(new File(app_folders.get(0).get("NewFolderApp")));
-        FileUtils.cleanDirectory(new File(app_folders.get(0).get("OldFolderApp")));
+        FileUtils.cleanDirectory(new File(app_folders.get(0).get("OldFolderPolluxApp")));
+        FileUtils.cleanDirectory(new File(app_folders.get(0).get("NewFolderPolluxApp")));
         File oldExe = new File(app_folders.get(0).get("oldExe"));
         if (!oldExe.exists()){oldExe.mkdirs();}
         FileUtils.cleanDirectory(oldExe);
@@ -31,23 +31,21 @@ public class Delete extends TestBase {
         File report = new File(app_folders.get(0).get("Report"));
         if (!report.exists()){report.mkdirs();}
         FileUtils.cleanDirectory(report);
-        FileUtils.cleanDirectory(new File("C:\\UNITAM\\FileMaster\\Files\\HHSettings\\ToPanel\\Settings"));
+        File FromPanelData = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\FromPanelData");
+        if (!FromPanelData.exists()){FromPanelData.mkdirs();}
+        FileUtils.cleanDirectory(FromPanelData);
+        File oldFromPanelData = new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\_origFromPanelData");
+        if (!oldFromPanelData.exists()){oldFromPanelData.mkdirs();}
+        FileUtils.cleanDirectory(oldFromPanelData);
         System.out.println("All folders are empty");
-
-        int n = Objects.requireNonNull(new File(app_folders.get(0).get("NewFolderApp")).list()).length;
-        int o = Objects.requireNonNull(new File(app_folders.get(0).get("OldFolderApp")).list()).length;
+        int n = Objects.requireNonNull(new File(app_folders.get(0).get("NewFolderPolluxApp")).list()).length;
+        int o = Objects.requireNonNull(new File(app_folders.get(0).get("OldFolderPolluxApp")).list()).length;
         int r = Objects.requireNonNull(new File(app_folders.get(0).get("Report")).list()).length;
         int e = Objects.requireNonNull(new File(app_folders.get(0).get("oldExe")).list()).length;
         int p = Objects.requireNonNull(new File(app_folders.get(0).get("screenShots")).list()).length;
-        int s = Objects.requireNonNull(new File("C:\\UNITAM\\FileMaster\\Files\\HHSettings\\ToPanel\\Settings").list()).length;
+        int s = Objects.requireNonNull(new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\FromPanelData").list()).length;
         return n+o+s+r+e+p;
     }
 
 
-    public int emptyFolderSetting() throws IOException {
-        System.out.println("@@@ DELETING SETTING FOLDER BEFORE STARTING THE TESTS WITH NEW VERSION @@@");
-        FileUtils.cleanDirectory(new File("C:\\UNITAM\\FileMaster\\Files\\HHSettings\\ToPanel\\Settings"));
-        int s = Objects.requireNonNull(new File("C:\\UNITAM\\FileMaster\\Files\\HHSettings\\ToPanel\\Settings").list()).length;
-        return s;
-    }
 }

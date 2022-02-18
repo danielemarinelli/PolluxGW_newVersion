@@ -20,8 +20,6 @@ public class email {
         email.setFrom(email_info.get(0).get("email_set_from"));
         email.setSubject(email_info.get(0).get("subject"));
         email.setMsg("REGRESSION PUBLISHER TEST: "+testName+" FAILED!");
-        //increase the loop iterations if email destinations increase, in this case only ONE email address is
-        //present in the EmailInfoSheet.xlsx
         for (int i = 0; i < (Integer.parseInt(email_info.get(0).get("MailList components"))); i++) {email.addTo(email_info.get(0).get("email"+(i+1))); }
         email.send();
         System.out.println("EMAILS SENT!!!");
@@ -66,27 +64,43 @@ public class email {
         System.out.println("EMAILS SENT WITH ATTACH!!!");
     }
 
-    public static void sendReportAfterCompare(String version, String versionTPI) throws Exception {
+    public static void sendReportAfterCompare(String version) throws Exception {
         email_info = excelUserData.getInfoFromEmailSheet();
-        folder_info = excelUserData.getFoldersNamesFromExcelSheet();
+        folder_info = excelUserData.getPolluxGWDataFromFile();
         EmailAttachment attachment = new EmailAttachment();
         MultiPartEmail email = new MultiPartEmail();
-        attachment.setPath(folder_info.get(0).get("Report")+"\\Publisher_Report");
+        attachment.setPath(folder_info.get(0).get("Report")+"\\Regression_Report");
         attachment.setDisposition(EmailAttachment.ATTACHMENT);
         attachment.setDescription("Reporting File");
-        attachment.setName("Publisher_Regression_Report");
+        attachment.setName("PolluxGateway_Regression_Report");
         email.setHostName(email_info.get(0).get("smtp"));
         email.setSmtpPort(Integer.parseInt(email_info.get(0).get("smtp_port")));
         email.setAuthenticator(new DefaultAuthenticator(email_info.get(0).get("user_name"), email_info.get(0).get("password")));
         email.setSSLOnConnect(true);
         for (int i = 0; i < (Integer.parseInt(email_info.get(0).get("MailList components"))); i++) {email.addTo(email_info.get(0).get("email"+(i+1))); }
         email.setFrom(email_info.get(0).get("email_set_from"));
-        email.setSubject("## REPORT Publisher Regression with new version "+version+"  ##");
-        email.setMsg("TPI VERSION: "+versionTPI+". REPORT generated with WinMerge TimeStamp and SourceAppVersion Filters ACTIVE. " +
+        email.setSubject("## REPORT PolluxGateway Regression with new version "+version+"  ##");
+        email.setMsg("REPORT generated with WinMerge CheckCode, SkipSettingsUpdate and SourceAppVersion Filters ACTIVE. " +
                 "Download it locally and open it with any editor available");
         email.attach(attachment);
         email.send();
-        System.out.println("REPORT SENT VIA EMAIL....");
+        System.out.println("---PolluxGateway REPORT SENT VIA EMAIL---");
     }
+
+    public static void sendEmailForPolluxFailure(String testName) throws Exception {
+        email_info = excelUserData.getInfoFromEmailSheet();
+        Email email = new SimpleEmail();
+        email.setHostName(email_info.get(0).get("smtp"));
+        email.setSmtpPort(Integer.parseInt(email_info.get(0).get("smtp_port")));
+        email.setAuthenticator(new DefaultAuthenticator(email_info.get(0).get("user_name"), email_info.get(0).get("password")));
+        email.setSSLOnConnect(true);
+        email.setFrom(email_info.get(0).get("email_set_from"));
+        email.setSubject(email_info.get(0).get("subject"));
+        email.setMsg("REGRESSION POLLUXGW TEST: "+testName+" FAILED!");
+        for (int i = 0; i < (Integer.parseInt(email_info.get(0).get("MailList components"))); i++) {email.addTo(email_info.get(0).get("email"+(i+1))); }
+        email.send();
+        System.out.println("EMAILS SENT for PolluxGW test failures!!!");
+    }
+
 
 }
