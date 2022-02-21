@@ -27,6 +27,7 @@ public class LogCollector extends TestBase {
         Actions actions = new Actions(driverLC);
         actions.contextClick(fm).perform();
         System.out.println("right click on FM");
+        Thread.sleep(1000);
         actions.moveToElement(driverLC.findElementByName("Start")).click().build().perform();
         driverLC.findElementByName("Yes").click();
         System.out.println("started FM in Admin mode...");

@@ -144,11 +144,11 @@ public class UBOTest_PolluxGW_NewVersion extends TestBase{
     @Test(priority=11, description="Sending Jobs to FileMaster with New Pollux Version",timeOut = 600000)  //10 mins timeout
     public void SendingJobsToFileMasterFromReproductionAgent_NEW() throws Exception {
         ra = new ReproductionAgent(getDriverRA());
-        ra.setJobRepAgent();
+        String reproAgentMessage = ra.setJobRepAgent();
         //do a screenshot of polluxGW with HHs
         System.out.println("Took PolluxGW screenshot");
         takeAppSnap(getDriverPolluxGW(),title_Polluxgw);
-        //WHICH ASSERTION?????????????
+        Assert.assertEquals(reproAgentMessage,"Reproduction Wizard - Process Complete", "Repro Agent process didn't end correctly");
     }
 
     @Test(priority=12, description="Open System View app")
