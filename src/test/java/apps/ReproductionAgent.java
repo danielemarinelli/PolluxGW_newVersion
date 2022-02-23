@@ -65,7 +65,7 @@ public class ReproductionAgent extends TestBase {
         String[] splitJobs = jobs.split(" ");
         int totalJobsRunning = Integer.parseInt(splitJobs[4]);
         System.out.println("@@@@@@ This operation might take a few minutes to complete. Please be patient @@@@@@");
-        Thread.sleep(100000); //wait 2mins
+        Thread.sleep(120000); //wait 2mins
         do {
             try{
             s = Objects.requireNonNull(new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\FromPanelData\\PolluxFromPanelTPI\\" + pickDateToReproduceFromFile.get(0).get("StartYear").replace(".0", "") + "\\" + pickDateToReproduceFromFile.get(0).get("StartMonth").replace(".0", "") + "\\" + pickDateToReproduceFromFile.get(0).get("StartDay").replace(".0", "")).list()).length;
