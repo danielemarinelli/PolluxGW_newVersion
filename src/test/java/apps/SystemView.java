@@ -39,6 +39,22 @@ public class SystemView extends TestBase {
         return title[0];
     }
 
+    public String displayPolluxGWLogs() throws Exception {
+        driverWinSV.findElementByName("Log type").click();
+        Thread.sleep(1000);
+        driverWinSV.findElementByAccessibilityId("DropDown").click();
+        scrollDownTillElementIsVisible(driverWinSV.findElementByName("POLLUX GATEWAY IN"));
+        Actions a = new Actions(driverWinSV);
+        WebElement pg= driverWinSV.findElementByName("POLLUX GATEWAY IN");
+        a.moveToElement(pg).click().build().perform();
+        //driverWinSV.findElementByAccessibilityId("1002").click();  //untick the ‘show notification'
+        driverWinSV.findElementByName("Read").click();
+        System.out.println("DISPLAY POLLUX GATEWAY LOGS....");
+        String[] title = driverWinSV.getTitle().split(" ");
+        takeAppSnap(driverWinSV, "PolluxGatewayLogs");
+        Thread.sleep(3000);
+        return title[0];
+    }
 
     public String mixerSnapShotWithNewVersion() throws Exception {
         String[] title = driverWinSV.getTitle().split(" ");

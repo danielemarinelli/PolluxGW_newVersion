@@ -77,6 +77,13 @@ public class LogCollector extends TestBase {
         return title[0];
     }
 
+    public String appTitlePublisher(WindowsDriver driverPublisher) throws Exception{
+        String title[] = driverPublisher.getTitle().split(" ");
+        System.out.println(driverPublisher.getTitle());
+        takeAppSnap(driverPublisher, title[0]);
+        return title[0];
+    }
+
     public void launchRFASInAdminMode(WindowsDriver driverLC) throws Exception {
         WebElement RFAS = driverLC.findElementByName("RFAS");
         Actions actions = new Actions(driverLC);
@@ -101,6 +108,31 @@ public class LogCollector extends TestBase {
             System.out.println("started RFAS in Admin mode...");
         }
         Thread.sleep(2000);
+    }
+
+    public void launchPublisherInAdminMode(WindowsDriver driverLC) throws Exception {
+        WebElement pub = driverLC.findElementByName("Publisher");
+        Actions actions = new Actions(driverLC);
+        if(pub.isDisplayed()) {
+            actions.contextClick(pub).perform();
+            System.out.println("right click on Publisher");
+            actions.moveToElement(driverLC.findElementByName("Start")).click().build().perform();
+            driverLC.findElementByName("Yes").click();
+            System.out.println("started Publisher in Admin mode...");
+        }else {  // ==>> NOT all apps are visible inside the LC window
+            for (int i = 0; i < 30; i++) {
+                driverLC.findElementByName("Line down").click();
+                if(pub.isDisplayed()){
+                    driverLC.findElementByName("Line down").click();
+                    break;}
+            }
+            actions.contextClick(pub).perform();
+            System.out.println("right click on Publisher");
+            actions.moveToElement(driverLC.findElementByName("Start")).click().build().perform();
+            driverLC.findElementByName("Yes").click();
+            System.out.println("started Publisher in Admin mode...");
+        }
+        Thread.sleep(5000);
     }
 
 }

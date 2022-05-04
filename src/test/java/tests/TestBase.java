@@ -47,6 +47,8 @@ public class TestBase {
     private WindowsDriver driverWinSV=null;
     private WindowsDriver driverUnitamSW=null;
     private WindowsDriver driverWinReproductionAgent;
+    private WindowsDriver driverWinPublisher=null;
+    private WindowsDriver driverWinPS=null;
     private TestReporter reporter;
     String date = null;
     String RAWinHandleHex = null;
@@ -214,6 +216,47 @@ public class TestBase {
         }
     }
 
+    public final void setUpPolluxSimulator() {
+        DesiredCapabilities PS = new DesiredCapabilities();
+        PS.setCapability("app", "C:\\UNITAM SW\\TOOLS\\PolluxSimulator.exe");
+        PS.setCapability("platformName", "Windows_PSimulator");
+        PS.setCapability("deviceName", "WindowsPC_PSimulator");
+        try {
+            driverWinPS = new WindowsDriver(new URL("http://127.0.0.1:4723/"), PS);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        Set<String> windowsPS = driverWinPS.getWindowHandles();
+        Assert.assertNotNull(driverWinPS,"PolluxSimulator didn't open");
+        System.out.println("PS handler: "+windowsPS);
+        driverWinPS.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+    }
+
+    public final void attachDriverToPublisher() {
+        try{
+            appTitlesFromFile = excelUserData.getAppFoldersFromFile();
+            DesiredCapabilities desktopCapabilities = new DesiredCapabilities();
+            desktopCapabilities.setCapability("platformName", "Windows");
+            desktopCapabilities.setCapability("deviceName", "WindowsPC");
+            desktopCapabilities.setCapability("app", "Root");
+            WindowsDriver desktopSession = new WindowsDriver(new URL("http://127.0.0.1:4723/"), desktopCapabilities);
+            DesiredCapabilities PubCapabilities = new DesiredCapabilities();
+            PubCapabilities.setCapability("platformName", "Windows");
+            PubCapabilities.setCapability("deviceName", "WindowsPC");
+            WebElement pub = desktopSession.findElementByName(appTitlesFromFile.get(0).get("PublisherTitle"));
+            String PGWinHandleStr = pub.getAttribute("NativeWindowHandle");
+            int PubWinHandleInt = Integer.parseInt(PGWinHandleStr);
+            String PubWinHandleHex = Integer.toHexString(PubWinHandleInt);
+            PubCapabilities.setCapability("appTopLevelWindow", PubWinHandleHex);
+            System.out.println("Publisher Handle is: " + PubWinHandleHex);
+            driverWinPublisher = new WindowsDriver(new URL("http://127.0.0.1:4723/"), PubCapabilities);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Something went wrong opening Publisher in Admin mode....");
+        }
+    }
+
+
     public final void attachDriverToRFAS() {
         try{
             appTitlesFromFile = excelUserData.getAppFoldersFromFile();
@@ -282,7 +325,8 @@ public class TestBase {
     public WindowsDriver getDriverWinMerge() { return driverWinMerge;}
     public WindowsDriver getDriverSV() { return driverWinSV;}
     public WindowsDriver getDriverRA() { return driverWinReproductionAgent;}
-    public WindowsDriver getDriverUnitamSW(){ return driverUnitamSW;}
+    public WindowsDriver getDriverPS(){ return driverWinPS;}
+    public WindowsDriver getDriverPublisher() { return driverWinPublisher;}
 
         public void tearDownSA() {
         driverWinSA.close();

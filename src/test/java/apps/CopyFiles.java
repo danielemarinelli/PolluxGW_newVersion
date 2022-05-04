@@ -13,22 +13,7 @@ public class CopyFiles extends TestBase {
 
     public static List<Map<String,String>> app_new_vers;
 
-    public boolean copyFilesFromPolluxOutputFolderToOldTestFolder() throws Exception {
-            app_new_vers = excelUserData.getPolluxGWDataFromFile();
-            File theDir = new File(app_new_vers.get(0).get("OldFolderPolluxApp"));
-            if (!theDir.exists()){theDir.mkdirs();}
-            ProcessBuilder ps = new ProcessBuilder("xcopy", "C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\FromPanelData\\PolluxFromPanelTPI\\"+app_new_vers.get(0).get("StartYear").replace(".0","")+"\\"+app_new_vers.get(0).get("StartMonth").replace(".0","")+"\\"+app_new_vers.get(0).get("StartDay").replace(".0",""), app_new_vers.get(0).get("OldFolderPolluxApp"));
-            ps.redirectErrorStream(true);
-            Process pr = ps.start();
-            BufferedReader in = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-            String line;
-            while ((line = in.readLine())  != null) {
-                System.out.println(line);}
-            pr.waitFor();
-            System.out.println("ok! Files copied under C:\\TEST Old Folder");
-            in.close();
-        return true;
-    }
+
 
     public boolean copyFilesFromPolluxOutputFolderToNewTestFolder() throws Exception {
         app_new_vers = excelUserData.getPolluxGWDataFromFile();
@@ -120,5 +105,21 @@ public class CopyFiles extends TestBase {
         return true;
     }
 
+    public boolean copyFilesFromToPanelSettingsFolderToNewTestFolder() throws Exception {
+        app_new_vers = excelUserData.getFoldersNamesFromExcelSheet();
+        File theDir = new File("C:\\UNITAM\\FileMaster\\Files\\HHSettings\\ToPanel\\Settings");
+        if (!theDir.exists()){theDir.mkdirs();}
+        ProcessBuilder ps = new ProcessBuilder("xcopy", "C:\\UNITAM\\FileMaster\\Files\\HHSettings\\ToPanel\\Settings",app_new_vers.get(0).get("NewFolderApp"));
+        ps.redirectErrorStream(true);
+        Process pr = ps.start();
+        BufferedReader in = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+        String line;
+        while ((line = in.readLine())  != null) {
+            System.out.println(line);}
+        pr.waitFor();
+        System.out.println("ok! ToPanel Files copied under C:\\TEST New Folder");
+        in.close();
+        return true;
+    }
 
 }

@@ -16,7 +16,7 @@ public class RFAS extends TestBase {
     public RFAS(WindowsDriver driverWinRFAS){this.driverWinRFAS = driverWinRFAS;}
 
     public int setAuthorization(WindowsDriver driverWinRFAS) throws Exception {
-        System.out.println("Click on Logs Client TAB of the RFAS app");
+        System.out.println("Click on Log Client TAB of the RFAS app");
         driverWinRFAS.findElementByName("Log Clients").click();
         //List num_auth_cli = driverWinRFAS.findElementsByAccessibilityId("ListViewSubItem-0");
         Thread.sleep(10000);

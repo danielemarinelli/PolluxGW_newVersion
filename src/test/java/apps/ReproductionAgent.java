@@ -49,13 +49,14 @@ public class ReproductionAgent extends TestBase {
         String[] title = driverWinRA.getTitle().split(" ");
         takeAppSnap(driverWinRA,title[0]+"_START");
         driverWinRA.findElementByAccessibilityId("JobMonitorExecuteButton").click();
-        Thread.sleep(3000);
+        System.out.println("@@@@@@ This operation might take up to 10 minutes to complete. Please be patient @@@@@@");
+        Thread.sleep(750000);  //wait10mins
         //checkIfProcessIsComplete();
-        String endJobs = checkIfJobsProcessIsCompleted();
+        //String endJobs = checkIfJobsProcessIsCompleted();
         String s = driverWinRA.findElementByAccessibilityId("JobMonitorCurrentJobProductionMonitorCounterLabel").getText();
         System.out.println(s);
         takeAppSnap(driverWinRA,title[0]+"_END");
-        return endJobs;
+        return null; //endJobs;
     }
 
     private String checkIfJobsProcessIsCompleted() throws Exception {

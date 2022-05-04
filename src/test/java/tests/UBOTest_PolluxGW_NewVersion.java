@@ -21,6 +21,7 @@ public class UBOTest_PolluxGW_NewVersion extends TestBase{
     LogCollector lc = null;
     Delete delete = null;
     WinMerge wm = null;
+    PolluxSimulator ps =null;
     String title_Polluxgw;
     public String[] ArrayPolluxgwVersion = null;
 
@@ -40,8 +41,8 @@ public class UBOTest_PolluxGW_NewVersion extends TestBase{
         setUpFM();
         files.createFoldersToUnzipCommonData();
         Thread.sleep(1000);
-        System.out.println("#### Unzipping daily files!!");
         System.out.println("#### Closing FM!!");
+        System.out.println("#### Unzipping daily files!!");
         tearDownFM();
         int daily = files.unzipDailyDataFiles();
         System.out.println("#### Unzipping common files!!");
@@ -62,8 +63,10 @@ public class UBOTest_PolluxGW_NewVersion extends TestBase{
         System.out.println(".......DELETING PolluxFromPanelTPI_OLD folder........");
         int p = files.removeDirectory(new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\FromPanelData\\PolluxFromPanelTPI_OLD"));
         files.removeDirectory(new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\_origFromPanelData"));
+        int l = files.removeDirectory(new File("C:\\UNITAM\\PolluxGateway\\Panel_0\\Files\\ToPanelData\\LastPlxToPanel_OLD"));
+        System.out.println(".......DELETING LastPlxToPanel_OLD folder .....");
         //int t = files.removeFilesFromTestDirectoryOld();
-        Assert.assertEquals(f+p,2);
+        Assert.assertEquals(f+p+l,3);
         //Assert.assertEquals(f,1);
     }
 
@@ -92,7 +95,7 @@ public class UBOTest_PolluxGW_NewVersion extends TestBase{
         Assert.assertEquals(fmTitle,"FileMaster");
     }
 
-    @Test(priority=6, description="Opens RFAS and checks the Client Authorization with OLD Pollux version")
+    @Test(priority=6, description="Opens RFAS and checks the Client Authorization with New Pollux version")
     public void waitClientAuthorized_NEW() throws Exception {
         rfas = new RFAS(getDriverRFAS());
         lc = new LogCollector();
@@ -144,11 +147,11 @@ public class UBOTest_PolluxGW_NewVersion extends TestBase{
     @Test(priority=11, description="Sending Jobs to FileMaster with New Pollux Version",timeOut = 600000)  //10 mins timeout
     public void SendingJobsToFileMasterFromReproductionAgent_NEW() throws Exception {
         ra = new ReproductionAgent(getDriverRA());
+        p = new PolluxGW();
         String reproAgentMessage = ra.setJobRepAgent();
-        //do a screenshot of polluxGW with HHs
-        System.out.println("Took PolluxGW screenshot");
-        takeAppSnap(getDriverPolluxGW(),title_Polluxgw);
-        Assert.assertEquals(reproAgentMessage,"Reproduction Wizard - Process Complete", "Repro Agent process didn't end correctly");
+        p.screenPolluxGW(getDriverPolluxGW());
+        //takeAppSnap(getDriverPolluxGW(),title_Polluxgw);
+        //Assert.assertEquals(reproAgentMessage,"Reproduction Wizard - Process Complete", "Repro Agent process didn't end correctly");
     }
 
     @Test(priority=12, description="Open System View app")
@@ -168,7 +171,49 @@ public class UBOTest_PolluxGW_NewVersion extends TestBase{
         Assert.assertEquals(title_sv,"SystemView");
     }
 
-    @Test(priority=13, description="Copying files from MixerOutput to a Test folder for compare of old version")
+    @Test(priority=13, description="Open Publisher application in ADMIN MODE")
+    public void startPublisher_AdminMode_NEW() throws Exception {
+        lc = new LogCollector();
+        lc.launchPublisherInAdminMode(getDriverLC());
+        attachDriverToPublisher();
+        String pubTitle = lc.appTitlePublisher(getDriverPublisher());
+        Assert.assertEquals(pubTitle,"Publisher");
+    }
+
+    //insert polluxsimulator
+    @Test(priority=14, description="Open PolluxSimulator application in ADMIN MODE")
+    public void startPolluxSimulator_AdminMode_NEW()  {
+        System.out.println("##########Pollux Simulator############");
+        String title_ps = null;
+        try {
+            setUpPolluxSimulator();
+            ps = new PolluxSimulator();
+            title_ps = ps.get_PS_Picture(getDriverPS());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Assert.assertEquals(title_ps,"PolluxSimulator");
+    }
+
+    @Test(priority=15, description="Copying files from MixerOutput to a Test folder for compare of new version")
+    public void generatingToPanelFilesWithPublisherAndPolluxSimulatorApps_NEW() throws Exception {
+        System.out.println("Generating ToPanel Files with OLD version");
+        files = new FilesActions();
+        //files.renameToPanelSettingsAndLastPlxToPanelFolders();
+        ps = new PolluxSimulator();
+        ps.polluxSendProcess(getDriverPS());
+    }
+
+    @Test(priority=16, description="Copying files from ToPanelSettings to a Test folder for compare of new version")
+    public void copyPanelSettingsFilesToOldTestVersionFolder() throws Exception {
+        System.out.println("Copy generated ToPanel\\Settings to Test folder");
+        cp = new CopyFiles();
+        boolean s = cp.copyFilesFromToPanelSettingsFolderToNewTestFolder();
+        System.out.println("ToPanel Files copied to C:\\TEST\\newAppVersion, ready to be compared....");
+        Assert.assertTrue(s);
+    }
+
+    @Test(priority=17, description="Copying files from MixerOutput to a Test folder for compare of new version")
     public void copyTPIFilesToNewTestVersionFolder() throws Exception {
         System.out.println("Copy generated TPI to Test folder");
         cp = new CopyFiles();
@@ -177,7 +222,26 @@ public class UBOTest_PolluxGW_NewVersion extends TestBase{
         Assert.assertTrue(t);
     }
 
-    @Test(priority=14, description="Opening Signals Admin and Priority List Action executed with NEW Publisher versionn")
+    @Test(priority=18, description="Open PolluxGW logs from System View app")
+    public void readPolluxGWLogsFromSystemView_OLD() {
+        System.out.println("##########System View for Pollux gw logs############");
+        String title_sv = null;
+        try {
+            //setUpSystemView();
+            switchToWindowSV(getDriverSV());
+            sv = new SystemView(getDriverSV());
+            title_sv = sv.displayPolluxGWLogs();
+            //title_sv = sv.mixerSnapShotWithOldVersion();
+            //lc = new LogCollector();
+            //lc.get_LC_Picture(getDriverLC());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Assert.assertEquals(title_sv,"SystemView");
+    }
+
+
+    @Test(priority=19, description="Opening Signals Admin and Priority List Action executed with NEW Publisher versionn")
     public void verifyCompareFilesAndSendReport() throws Exception {
         openWinMergeApp();
         wm = new WinMerge(getDriverWinMerge());
@@ -190,7 +254,7 @@ public class UBOTest_PolluxGW_NewVersion extends TestBase{
             Assert.fail();}
     }
 
-    @Test(priority=15, description="Moves the old PolluxGW version from UNITAM SW folder to other folder")  //
+    @Test(priority=20, description="Moves the old PolluxGW version from UNITAM SW folder to other folder")  //
     public void movePolluxOldExeFile() throws IOException {
         files = new FilesActions();
         int file = files.cancelPolluxOldExeFileFromUnitamSWFolder();
