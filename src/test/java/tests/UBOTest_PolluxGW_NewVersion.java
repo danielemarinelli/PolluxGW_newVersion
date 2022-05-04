@@ -144,7 +144,7 @@ public class UBOTest_PolluxGW_NewVersion extends TestBase{
         Assert.assertTrue(ra.getNumberTotalTPIFilesFromMixerOutputFolder()>0);
     }
 
-    @Test(priority=11, description="Sending Jobs to FileMaster with New Pollux Version",timeOut = 600000)  //10 mins timeout
+    @Test(priority=11, description="Sending Jobs to FileMaster with New Pollux Version",timeOut = 800000)  //12 mins timeout
     public void SendingJobsToFileMasterFromReproductionAgent_NEW() throws Exception {
         ra = new ReproductionAgent(getDriverRA());
         p = new PolluxGW();

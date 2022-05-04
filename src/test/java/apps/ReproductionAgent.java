@@ -50,7 +50,7 @@ public class ReproductionAgent extends TestBase {
         takeAppSnap(driverWinRA,title[0]+"_START");
         driverWinRA.findElementByAccessibilityId("JobMonitorExecuteButton").click();
         System.out.println("@@@@@@ This operation might take up to 10 minutes to complete. Please be patient @@@@@@");
-        Thread.sleep(750000);  //wait10mins
+        Thread.sleep(600000);  //wait10mins
         //checkIfProcessIsComplete();
         //String endJobs = checkIfJobsProcessIsCompleted();
         String s = driverWinRA.findElementByAccessibilityId("JobMonitorCurrentJobProductionMonitorCounterLabel").getText();
