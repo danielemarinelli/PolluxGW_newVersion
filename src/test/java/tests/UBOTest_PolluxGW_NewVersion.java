@@ -205,7 +205,7 @@ public class UBOTest_PolluxGW_NewVersion extends TestBase{
     }
 
     @Test(priority=16, description="Copying files from ToPanelSettings to a Test folder for compare of new version")
-    public void copyPanelSettingsFilesToOldTestVersionFolder() throws Exception {
+    public void copyPanelSettingsFilesToNewTestVersionFolder_NEW() throws Exception {
         System.out.println("Copy generated ToPanel\\Settings to Test folder");
         cp = new CopyFiles();
         boolean s = cp.copyFilesFromToPanelSettingsFolderToNewTestFolder();
@@ -223,7 +223,7 @@ public class UBOTest_PolluxGW_NewVersion extends TestBase{
     }
 
     @Test(priority=18, description="Open PolluxGW logs from System View app")
-    public void readPolluxGWLogsFromSystemView_OLD() {
+    public void readPolluxGWLogsFromSystemView_NEW() {
         System.out.println("##########System View for Pollux gw logs############");
         String title_sv = null;
         try {
@@ -231,15 +231,11 @@ public class UBOTest_PolluxGW_NewVersion extends TestBase{
             switchToWindowSV(getDriverSV());
             sv = new SystemView(getDriverSV());
             title_sv = sv.displayPolluxGWLogs();
-            //title_sv = sv.mixerSnapShotWithOldVersion();
-            //lc = new LogCollector();
-            //lc.get_LC_Picture(getDriverLC());
         } catch (Exception e) {
             e.printStackTrace();
         }
         Assert.assertEquals(title_sv,"SystemView");
     }
-
 
     @Test(priority=19, description="Opening Signals Admin and Priority List Action executed with NEW Publisher versionn")
     public void verifyCompareFilesAndSendReport() throws Exception {
