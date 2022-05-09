@@ -125,7 +125,7 @@ public class WinMerge extends TestBase {
         driverWinMerge.findElementByAccessibilityId("1").click();
         //System.out.println("....Generating REPORT with TPI version "+versionTPI+" ....");
         email.sendReportAfterCompare(version);
-        Thread.sleep(5000);
+        Thread.sleep(9000);
         driverWinMerge.findElementByAccessibilityId("1").click();
         a.moveToElement(diffButton,1500,-40).click().build().perform();  //click in restore window button
         return 1;
