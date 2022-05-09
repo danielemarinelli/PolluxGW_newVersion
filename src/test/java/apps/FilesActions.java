@@ -294,9 +294,9 @@ public class FilesActions extends TestBase {
             e.printStackTrace();
         }
         if (temp != null) {
-            System.out.println("File Publisher_OLD_VERS.exe renamed and moved successfully to C:\\TEST\\old_Exe");
+            System.out.println("File PolluxGateway_OLD_VERS.exe renamed and moved successfully to C:\\TEST\\old_Exe");
         } else {
-            System.out.println("Failed to move the file Publisher_OLD_VERS.exe");
+            System.out.println("Failed to move the file PolluxGateway_OLD_VERS.exe");
         }
         int e = Objects.requireNonNull(new File(app_new_vers.get(0).get("oldExe")).list()).length;
         return e;
